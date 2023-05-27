@@ -3,100 +3,111 @@ import './GitHubApp.css'; // import the CSS file
 import axios from 'axios';
 
 const GitHubApp = () => {
-  const [repoUrl, setRepoUrl] = useState('');
+  const [showConfigForm, setShowConfigForm] = useState(false);
   const [repoName, setRepoName] = useState('');
+  const [branchName, setBranchName] = useState('');
+  const [monitoringURL, setMonitoringURL] = useState('');
+  const [message, setConfigMessage] = useState('');
+  const [showRTSForm, setShowRTSForm] = useState(false);
+  const [rtsMsg, setRTSMessage] = useState('');
   const [prNumber, setPRNumber] = useState('');
-  const [tests, setTests] = useState([]);
-  const [repos, setRepos] = useState([]);
 
-  
-  const initializeRepo = async () => {
-    // make API call to initialize the GH Repository
-    const response = await axios.post('/api/initialize', { repoUrl });
-    if(response.data.success) {
-      // Let's assume tests are returned after initialization
-      setTests(response.data.tests);
-      setRepos(response.data.tests);
-    } else {
-      alert('Initialization failed');
+
+  const handleConfigFormSubmit = async (e) => {
+    e.preventDefault();
+    const url = `http://localhost:8080/configure?repoName=${repoName}&branchName=${branchName}&monitoringURL=${monitoringURL}`;
+    try {
+      const response = await axios.get(url);
+      if (response.status === 200) {
+        setConfigMessage('Configuration successful!');
+      } else {
+        setConfigMessage('Configuration failed!');
+      }
+    } catch (error) {
+      setConfigMessage('Configuration failed!');
     }
   };
-  
-  const updateMappings = async () => {
-    // make API call to update mappings for the GH Repository
-    const response = await axios.post('/api/updateMappings', { repoName });
-    if(response.data.success) {
-      alert('Mappings updated successfully');
-    } else {
-      alert('Failed to update mappings');
-    }
-  };
-  
-  const runTests = async () => {
-    // make API call to run selected tests
-    const response = await axios.post('/api/runTests', { repoName });
-    if(response.data.success) {
-      alert('Tests run successfully');
-    } else {
-      alert('Failed to run tests');
+  const handleRTSFormSubmit = async (e) => {
+    e.preventDefault();
+    const url = `http://localhost:8080/rts?repoName=${repoName}&branchName=${branchName}&pr=${prNumber}`
+    try {
+      const response = await axios.get(url);
+      if (response.status === 200) {
+        setRTSMessage(response.data);
+      } else {
+        setRTSMessage('Test selection failed!');
+      }
+    } catch (error) {
+      setRTSMessage('Test selection failed!');
     }
   };
 
-  const showSelectedTests = async () => {
-    // make API call to run selected tests
-    const response = await axios.post('/api/getTests', { repoName });
-    if(response.data.success) {
-      alert('Tests run successfully');
-    } else {
-      alert('Failed to run tests');
-    }
-  };
-  
   return (
     <div className="app">
       <h1 className="app-header">Regression Test Selector</h1>
-      <div className="repos">
-        <h2>Initialize Sources</h2>
-        <ul>
-          {repos.map((repo, index) => <li key={index}>{repo}</li>)}
-        </ul>
+      <div className="input-group">
+        <button className="btn" onClick={() => { setShowConfigForm(!showConfigForm); setConfigMessage('') }} >
+          {showConfigForm ? 'Back to Home' : 'Initialize Microservices'}
+        </button>
+        {showConfigForm && (
+          <form onSubmit={handleConfigFormSubmit}>
+            <input
+              className="input-field"
+              type="text"
+              placeholder="Enter Repository Name"
+              value={repoName}
+              onChange={e => setRepoName(e.target.value)}
+            />
+            <input
+              className="input-field"
+              type="text"
+              placeholder="Enter Branch Name"
+              value={branchName}
+              onChange={e => setBranchName(e.target.value)}
+            />
+            <input
+              className="input-field"
+              type="text"
+              placeholder="Enter Monitoring URL"
+              value={monitoringURL}
+              onChange={e => setMonitoringURL(e.target.value)}
+            />
+            <button className="btn">Initialize</button>
+          </form>
+        )}
+        {message && <p>{message}</p>}
       </div>
       <div className="input-group">
-        <input 
-          className="input-field"
-          type="text" 
-          placeholder="Enter GitHub Repo URL" 
-          value={repoUrl} 
-          onChange={e => setRepoUrl(e.target.value)} 
-        />
-        <button className="btn" onClick={initializeRepo}>Initialize Repository</button>
-      </div>
-      <div className="input-group">
-        <input 
-          className="input-field"
-          type="text" 
-          placeholder="Enter Repository Name" 
-          value={repoName} 
-          onChange={e => setRepoName(e.target.value)} 
-        />
-        <button className="btn" onClick={updateMappings}>Update Mappings</button>
-      </div>
-      <div className="tests">
-        <h2>Select Tests</h2>
-        <ul>
-          {tests.map((test, index) => <li key={index}>{test}</li>)}
-        </ul>
-      </div>
-      <div className="input-group">
-        <input 
-          className="input-field"
-          type="text" 
-          placeholder="Enter Pull Request Number" 
-          value={prNumber} 
-          onChange={e => setPRNumber(e.target.value)} 
-        />
-        <button className="btn" onClick={showSelectedTests}>View Selected Tests</button>
-        <button className="btn" onClick={runTests}>Run Selected Tests</button>
+        <button className="btn" onClick={() => { setShowRTSForm(!showRTSForm); setConfigMessage('') }} >
+          {showRTSForm ? 'Back to Home' : 'Get Selected Tests'}
+        </button>
+        {showRTSForm && (
+          <form onSubmit={handleRTSFormSubmit}>
+            <input
+              className="input-field"
+              type="text"
+              placeholder="Enter Repository Name"
+              value={repoName}
+              onChange={e => setRepoName(e.target.value)}
+            />
+            <input
+              className="input-field"
+              type="text"
+              placeholder="Enter Branch Name"
+              value={branchName}
+              onChange={e => setBranchName(e.target.value)}
+            />
+            <input
+              className="input-field"
+              type="text"
+              placeholder="Enter PR Number"
+              value={repoName}
+              onChange={e => setPRNumber(e.target.value)}
+            />
+            <button className="btn">Get Tests</button>
+          </form>
+        )}
+        {rtsMsg && <p>{rtsMsg}</p>}
       </div>
     </div>
   );
